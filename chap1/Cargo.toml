@@ -1,0 +1,10 @@
+[package]
+name = "algospot_study_chap1"
+version = "0.1.0"
+authors = ["Eunchong Yu <kroisse@gmail.com>"]
+
+[[bin]]
+name = "festival"
+path = "src/festival.rs"
+
+[dependencies]
