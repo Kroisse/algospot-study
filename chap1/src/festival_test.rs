@@ -20,7 +20,7 @@ const SAMPLE_DATA: &'static [(&'static str, &'static [f64])] = &[
 fn full_test() {
     for &(input, expected) in SAMPLE_DATA {
         let mut output = Vec::new();
-        process(&mut input.as_bytes(), &mut output).unwrap();
+        process(&mut input.as_bytes(), &mut output);
         let output: Vec<f64> = (&output[..]).lines().map(|line| line.unwrap().trim().parse().unwrap()).collect();
         assert_eq!(output, expected);
     }

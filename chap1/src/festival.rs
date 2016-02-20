@@ -11,7 +11,6 @@
     - 복붙하기 껄끄러우니 테스트 코드를 별도 파일로 분리함.
     - 이제 시간을 줄여 보자. 앞서 푼 사람들의 기록을 보면 10ms 이내에 달성 가능함.
  */
-use std::error::Error;
 use std::io;
 
 /*
@@ -83,29 +82,30 @@ fn calculate_v0(prices: &[u32], n_team: u32) -> f64 {
 }
 
 
-fn process(input: &mut io::BufRead, output: &mut io::Write) -> Result<(), Box<Error>> {
+fn process(input: &mut io::BufRead, output: &mut io::Write) {
     let mut line = String::new();
-    try!(input.read_line(&mut line));
-    let cases: u32 = try!(line.trim().parse());
+    input.read_line(&mut line).unwrap();
+    let cases: u32 = line.trim().parse().unwrap();
     for _ in 0..cases {
         line.clear();
-        try!(input.read_line(&mut line));
-        let info: Vec<u32> = try!(line.split(' ').map(|e| e.trim().parse()).collect());
-        let (days, teams) = (info[0], info[1]);
+        input.read_line(&mut line).unwrap();
+        let mut info = Vec::with_capacity(2);
+        info.extend(line.trim().split(' ').map(|e| e.parse::<u32>().unwrap()));
+        let (days, teams) = (info[0] as usize, info[1]);
         line.clear();
-        try!(input.read_line(&mut line));
-        let prices: Vec<u32> = try!(line.split(' ').map(|e| e.trim().parse()).collect());
+        input.read_line(&mut line).unwrap();
+        let mut prices = Vec::with_capacity(days);
+        prices.extend(line.trim().split(' ').map(|e| e.parse::<u32>().unwrap()));
         assert!(days as usize == prices.len());
         let result = calculate(&prices, teams);
-        try!(writeln!(output, "{:.11}", result));
+        writeln!(output, "{:.11}", result).unwrap();
     }
-    Ok(())
 }
 
 
 fn main() {
     let stdin = io::stdin();
-    process(&mut stdin.lock(), &mut io::stdout()).unwrap();
+    process(&mut stdin.lock(), &mut io::stdout());
 }
 
 
