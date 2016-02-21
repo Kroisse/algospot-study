@@ -1,0 +1,7 @@
+[package]
+name = "zeroone"
+version = "0.1.0"
+authors = ["Eunchong Yu <gracie@spoqa.com>"]
+
+[dev-dependencies]
+rand = "^0.3"
