@@ -12,6 +12,67 @@
     - 이제 시간을 줄여 보자. 앞서 푼 사람들의 기록을 보면 10ms 이내에 달성 가능함.
  */
 use std::io;
+use std::cmp;
+
+/*
+    실수 연산을 배제해 봅시다.
+    36ms!
+ */
+pub struct Fraction { pub numerator: u32, pub denominator: u32 }
+
+impl Fraction {
+    pub fn new(numerator: u32, denominator: u32) -> Fraction {
+        Fraction { numerator: numerator, denominator: denominator }
+    }
+}
+
+impl cmp::PartialEq for Fraction {
+    fn eq(&self, other: &Fraction) -> bool {
+        self.cmp(other) == cmp::Ordering::Equal
+    }
+}
+
+impl cmp::Eq for Fraction { }
+
+impl cmp::PartialOrd for Fraction {
+    fn partial_cmp(&self, other: &Fraction) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl cmp::Ord for Fraction {
+    fn cmp(&self, other: &Fraction) -> cmp::Ordering {
+        let Fraction { numerator: a, denominator: b} = *self;
+        let Fraction { numerator: c, denominator: d} = *other;
+        cmp::Ord::cmp(&(a * d), &(c * b))
+    }
+}
+
+impl From<Fraction> for f64 {
+    fn from(frac: Fraction) -> f64 {
+        frac.numerator as f64 / frac.denominator as f64
+    }
+}
+
+fn calculate(costs: &[u32], n_team: u32) -> f64 {
+    let n_team = n_team as usize;
+    assert!(n_team <= costs.len());
+    let mut min_avg_cost = Fraction::new(1, 0); // infinity
+    let mut partial_sum = Vec::with_capacity(costs.len() + 1);
+    partial_sum.push(0);
+    partial_sum.extend(costs.iter().scan(0, |state, &x| { *state += x; Some(*state) }));
+    let partial_sum = partial_sum;
+    for begin in 0..(costs.len() - n_team + 1) {
+        for end in (begin + n_team)..(costs.len() + 1) {
+            let sum = partial_sum[end] - partial_sum[begin];
+            let avg_cost = Fraction::new(sum, (end - begin) as u32);
+            if min_avg_cost > avg_cost {
+                min_avg_cost = avg_cost;
+            }
+        }
+    }
+    f64::from(min_avg_cost)
+}
 
 /*
     비용 배열   1  2  3  1  2  3
@@ -22,7 +83,7 @@ use std::io;
     하지만 133ms -> 75ms
     - Vec::with_capacity()의 유무가 이렇게 큰 차이를 만듭니다.
  */
-fn calculate(prices: &[u32], n_team: u32) -> f64 {
+fn calculate_v2(prices: &[u32], n_team: u32) -> f64 {
     let n_team = n_team as usize;
     assert!(n_team <= prices.len());
     let mut min_avg_price = std::f64::MAX;
