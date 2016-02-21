@@ -54,17 +54,27 @@ impl From<Fraction> for f64 {
 }
 
 /*
-    calculate_v1 + Fraction
-    34ms...
+    calculate_v1 + Fraction + calculate_v3!
+    28ms.
  */
+fn partial_sum(costs: &[u32]) -> Vec<u32> {
+    let mut partial_sum = Vec::with_capacity(costs.len() + 1);
+    partial_sum.push(0);
+    partial_sum.extend(costs.iter().scan(0, |state, &x| { *state += x; Some(*state) }));
+    partial_sum
+}
+
 fn calculate(costs: &[u32], n_team: u32) -> f64 {
     let infinity = Fraction::new(1, 0);
     assert!(n_team as usize <= costs.len());
+    let partial_sums = partial_sum(costs);
     let mut min_avg_cost = infinity;
     for i in 0..(costs.len() - n_team as usize + 1) {
-        let partial = &costs[i..costs.len()];
-        let (mandatory, optional) = partial.split_at(n_team as usize - 1);
-        let sum = mandatory.iter().fold(0, |acc, x| acc + x);
+        let optional_begins = i + n_team as usize - 1;
+        let sum = unsafe {
+            partial_sums.get_unchecked(optional_begins) - partial_sums.get_unchecked(i)
+        };
+        let optional = &costs[optional_begins..costs.len()];
         let mut cost = Fraction::new(sum, n_team - 1);
         for &c in optional {
             cost.numerator += c;
@@ -170,9 +180,34 @@ mod old {
     use std::cmp;
 
     /*
+        calculate_v1 + Fraction
+        34ms...
+     */
+    fn calculate_v4(costs: &[u32], n_team: u32) -> f64 {
+        let infinity = Fraction::new(1, 0);
+        assert!(n_team as usize <= costs.len());
+        let mut min_avg_cost = infinity;
+        for i in 0..(costs.len() - n_team as usize + 1) {
+            let partial = &costs[i..costs.len()];
+            let (mandatory, optional) = partial.split_at(n_team as usize - 1);
+            let sum = mandatory.iter().fold(0, |acc, x| acc + x);
+            let mut cost = Fraction::new(sum, n_team - 1);
+            for &c in optional {
+                cost.numerator += c;
+                cost.denominator += 1;
+                if min_avg_cost > cost {
+                    min_avg_cost = cost;
+                }
+            }
+        }
+        f64::from(min_avg_cost)
+    }
+
+    /*
         실수 연산을 배제해 봅시다.
         36ms!
      */
+    #[derive(Clone, Copy)]
     pub struct Fraction { pub numerator: u32, pub denominator: u32 }
 
     impl Fraction {
