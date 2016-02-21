@@ -142,8 +142,87 @@ fn calculate_v0(prices: &[u32], n_team: u32) -> f64 {
     min_avg_price
 }
 
+/*
+    이쪽도 개선해봅시다. 쓸데없는 string split, 메모리 할당 등이 많았음.
+    ...구현하기 엄청 짜증남.
+
+    36ms. 효과 없음.
+ */
+fn read_u32(read: &mut io::BufRead) -> io::Result<u32> {
+    let mut result: Option<u32> = None;
+    let mut count;
+    'a: loop {
+        count = 0;
+        {
+            let buf = try!(read.fill_buf());
+            if buf.len() == 0 {
+                break 'a;
+            }
+            for &b in buf {
+                result = match (b, result) {
+                    (b'0' ... b'9', Some(r)) => Some(r * 10 + (b - b'0') as u32),
+                    (b'0' ... b'9', None)    => Some((b - b'0') as u32),
+                    _ => { break 'a; }
+                };
+                count += 1;
+            }
+        }
+        read.consume(count);
+    }
+    read.consume(count);
+    if let Some(r) = result {
+        Ok(r)
+    } else {
+        Err(io::Error::new(io::ErrorKind::Other, "failed to read"))
+    }
+}
+
+fn consume<'a, F>(read: &mut io::BufRead, mut pred: F) -> io::Result<usize> where F: FnMut(u8) -> bool + 'a {
+    let mut count = 0;
+    let mut c;
+    'c: loop {
+        c = 0;
+        {
+            let buf = try!(read.fill_buf());
+            if buf.len() == 0 {
+                break 'c;
+            }
+            for &b in buf {
+                if pred(b) {
+                    /* just pass it */
+                } else {
+                    break 'c;
+                }
+                c += 1;
+            }
+        }
+        read.consume(c);
+        count += c;
+    }
+    read.consume(c);
+    Ok(count + c)
+}
 
 fn process(input: &mut io::BufRead, output: &mut io::Write) {
+    let cases: u32 = read_u32(input).unwrap();
+    consume(input, |b| b == b'\n').unwrap();
+    for _ in 0..cases {
+        let days = read_u32(input).unwrap() as usize;
+        consume(input, |b| b == b' ').unwrap();
+        let teams = read_u32(input).unwrap();
+        consume(input, |b| b == b'\n').unwrap();
+        let mut costs = Vec::with_capacity(days);
+        for _ in 0..days {
+            costs.push(read_u32(input).unwrap());
+            consume(input, |b| b == b' ').unwrap();
+        }
+        consume(input, |b| b == b'\n').unwrap();
+        let result = calculate(&costs, teams);
+        writeln!(output, "{:.11}", result).unwrap();
+    }
+}
+
+fn process_v1(input: &mut io::BufRead, output: &mut io::Write) {
     let mut line = String::new();
     input.read_line(&mut line).unwrap();
     let cases: u32 = line.trim().parse().unwrap();
